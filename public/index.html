@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline';">
+    <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline';"> -->
+</head>
+<body>
+    <button id="connectWallet" onclick="connectWallet()">Connect Wallet</button>
+
+<script src="js/mesh.bundle.js" onerror="console.error('Failed to load mesh.bundle.js')"></script>
+
+<script>
+    const { 
+        BrowserWallet,
+        Transaction,
+        resolvePlutusScriptAddress,
+        applyCborEncoding,
+        MeshTxBuilder,
+        BlockfrostProvider 
+    } = window.Mesh;
+     
+    async function connectWallet() {
+        if (window.cardano && window.cardano.lace) {
+            try { 
+                let lace = await window.cardano.lace.enable();
+                const walletAddresses = await lace.getUsedAddresses();
+                console.log("Connected to Lace: ", walletAddresses);                
+                alert('no errors');
+            } catch (err) {
+                console.error("Error connecting to Lace: Wallet", err);
+            }
+        } else {
+            console.error("Lace wallet not found.");
+        }
+    }
+</script>
+</body>
