@@ -6,10 +6,12 @@
 </head>
 <body>
     <button id="connectWallet" onclick="connectWallet()">Connect Wallet</button>
+    <button id="sendFunds" onclick="sendFunds(2000000)">Send 2 ADA to Script</button>
 
 <script src="js/mesh.bundle.js" onerror="console.error('Failed to load mesh.bundle.js')"></script>
 
 <script>
+
     const { 
         BrowserWallet,
         Transaction,
@@ -18,12 +20,19 @@
         MeshTxBuilder,
         BlockfrostProvider 
     } = window.Mesh;
+
+    const redeemer42Script ={
+        code: applyCborEncoding("581e010100255333573466e1d2054375a6ae84d5d11aab9e3754002229308b01"),
+        version: "V3"
+    };
+    const redeemer42Addr = resolvePlutusScriptAddress(redeemer42Script, 0);
      
     async function connectWallet() {
         if (window.cardano && window.cardano.lace) {
             try { 
                 let lace = await window.cardano.lace.enable();
-                const walletAddresses = await lace.getUsedAddresses();
+                wallet = await BrowserWallet.enable('lace');
+                walletAddresses = await wallet.getChangeAddress();
                 console.log("Connected to Lace: ", walletAddresses);                
                 alert('no errors');
             } catch (err) {
@@ -32,6 +41,30 @@
         } else {
             console.error("Lace wallet not found.");
         }
+    }
+
+    let wallet;
+    let walletAddresses;
+
+    let txHashAssetUtxo;
+
+    async function sendFunds(amount) {
+        console.log(`Sending funds: ${amount}`);
+        const tx = new Transaction({initiator: wallet})
+            .setNetwork("preprod")
+            .sendLovelace(
+                redeemer42Addr,
+                amount.toString()
+            )
+            .setChangeAddress(walletAddresses);
+
+        console.log("Building transaction...");
+        const txUnsigned = await tx.build();
+        console.log("Transaction built...Signing transaction...");
+        const txSigned = await wallet.signTx(txUnsigned);
+        console.log("Transaction signed...Submitting transaction...");
+        txHashAssetUtxo = await wallet.submitTx(txSigned);
+        console.log(`Transaction submitted... Asset UTXO hash:", ${txHashAssetUtxo}`);
     }
 </script>
 </body>
